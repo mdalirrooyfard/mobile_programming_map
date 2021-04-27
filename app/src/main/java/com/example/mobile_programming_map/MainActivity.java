@@ -2,14 +2,21 @@ package com.example.mobile_programming_map;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.content.res.AppCompatResources;
 import androidx.core.app.ActivityCompat;
+import androidx.core.graphics.drawable.DrawableCompat;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.FragmentManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.net.ConnectivityManager;
@@ -18,11 +25,13 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.mapbox.android.core.location.LocationEngine;
 import com.mapbox.android.core.location.LocationEngineCallback;
 import com.mapbox.android.core.location.LocationEngineProvider;
@@ -31,6 +40,7 @@ import com.mapbox.android.core.location.LocationEngineResult;
 import com.mapbox.android.core.permissions.PermissionsListener;
 import com.mapbox.android.core.permissions.PermissionsManager;
 import com.mapbox.mapboxsdk.Mapbox;
+import com.mapbox.mapboxsdk.camera.CameraPosition;
 import com.mapbox.mapboxsdk.camera.CameraUpdate;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.geometry.LatLng;
@@ -39,10 +49,13 @@ import com.mapbox.mapboxsdk.location.LocationComponentActivationOptions;
 import com.mapbox.mapboxsdk.location.LocationUpdate;
 import com.mapbox.mapboxsdk.location.modes.CameraMode;
 import com.mapbox.mapboxsdk.location.modes.RenderMode;
+import com.mapbox.mapboxsdk.maps.MapFragment;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
+import com.mapbox.mapboxsdk.maps.MapboxMapOptions;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.maps.Style;
+import com.mapbox.mapboxsdk.maps.SupportMapFragment;
 import com.mapbox.mapboxsdk.plugins.locationlayer.LocationLayerPlugin;
 
 import java.lang.ref.WeakReference;
@@ -53,245 +66,91 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 
 
-public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, PermissionsListener {
+public class MainActivity extends AppCompatActivity implements PermissionsListener{
     ThreadPoolExecutor executor;
     private Boolean isFirstPageLoading = true;
 
-    private MapView mapView;
-    private MapboxMap map;
+    private BottomNavigationView bottomNavigation;
+    private MapboxMap mapboxMap;
     private PermissionsManager permissionsManager;
-    private LocationEngine locationEngine;
-    private final long DEFAULT_INTERVAL_IN_MILLISECONDS = 1000L;
-    private long DEFAULT_MAX_WAIT_TIME = DEFAULT_INTERVAL_IN_MILLISECONDS * 5;
-    // Variables needed to listen to location updates
-    private MainActivityLocationCallback callback = new MainActivityLocationCallback(this);
+    private SupportMapFragment mapFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Mapbox.getInstance(this, getString(R.string.mapbox_access_token));
         setContentView(R.layout.activity_main);
-        mapView = (MapView) findViewById(R.id.mapView);
-        mapView.onCreate(savedInstanceState);
-        mapView.getMapAsync(this);
-        /*if(!checkConnection()){
-//            Intent intent = new Intent(this, MainActivity.class);
-//            startActivity(intent);
-//            return;
-            CharSequence message = "Internet is not connected.";
-            Toast toast = Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG);
-            toast.show();
-        }
-        SwipeRefreshLayout swipeRefreshLayout = (SwipeRefreshLayout)findViewById(R.id.glide_custom_view_target_tag);
-        swipeRefreshLayout.setRefreshing(true);
-        executor = MySingleTone.getThreadPool();
-        Handler handler = new Handler(Looper.getMainLooper());
-        Context context = getApplicationContext();
-        ArrayList<CoinModel> coins =  new ArrayList<>();
-
-        final Boolean[] isLoading = {Boolean.FALSE};
-        Integer[] start = (Integer[]) getIntent().getSerializableExtra("Start");
-        Integer[] limit = null;
-        if(start==null){
-            start = new Integer[]{1};
-            limit = new Integer[]{10};
-
-        }else{
-            limit = new Integer[]{start[0]-1};
-            start = new Integer[]{1};
-        }
-        LoadCoins l = new LoadCoins(MainActivity.this, start, limit, coins, isLoading, context);
-        try {
-            l.setUiForLoading();
-            isLoading[0] = true;
-            executor.execute(new RunnableTask<R>(handler, l));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        Button loadMore = findViewById(R.id.glide_custom_view_target_tag);
-
-
-        ArrayList<CoinModel> finalCoins = coins;
-        Integer[] finalStart = start;
-        Integer[] finalLimit = limit;
-        loadMore.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Log.i("load more","CLICKED");
-                if(!isLoading[0]){
-                    Log.i("loading","is not loading");
-                    SwipeRefreshLayout swipeRefreshLayout = (SwipeRefreshLayout)findViewById(R.id.glide_custom_view_target_tag);
-                    swipeRefreshLayout.setRefreshing(true);
-                    LoadCoins l = new LoadCoins(MainActivity.this, finalStart, finalLimit, finalCoins, isLoading, context);
-                    try {
-                        l.setUiForLoading();
-                        isLoading[0] = true;
-                        executor.execute(new RunnableTask<R>(handler, l));
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-                else{
-                    Log.i("loading","Hoooooooo");
-                    CharSequence message = "Please wait for full loading.";
-                    Toast toast = Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG);
-                    toast.show();
-                }
-            }
-        });*/
-
-    }
-
-    @Override
-    public void onMapReady(@NonNull MapboxMap mapboxMap) {
-        map = mapboxMap;
-        mapboxMap.setStyle(Style.MAPBOX_STREETS,
-                new Style.OnStyleLoaded() {
+        bottomNavigation = findViewById(R.id.bottom_navigation);
+        bottomNavigation.getMenu().getItem(1).setChecked(true);
+        BottomNavigationView.OnNavigationItemSelectedListener navigationItemSelectedListener =
+                new BottomNavigationView.OnNavigationItemSelectedListener() {
                     @Override
-                    public void onStyleLoaded(@NonNull Style style) {
-                        enableLocationComponent(style);
+                    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+                        switch (item.getItemId()) {
+                            case R.id.map_item:
+                                openFragment(mapFragment);
+                                return true;
+                            case R.id.bookmark:
+                                openFragment(BookmarkFragment.newInstance("", ""));
+                                return true;
+                            case R.id.settings:
+                                openFragment(SettingsFragment.newInstance("", ""));
+                                return true;
+                        }
+                        return false;
                     }
-                });
+                };
+        bottomNavigation.setOnNavigationItemSelectedListener(navigationItemSelectedListener);
+        if (savedInstanceState == null) {
+            final FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+            MapboxMapOptions options = MapboxMapOptions.createFromAttributes(this, null);
+            options.camera(new CameraPosition.Builder()
+                    .target(new LatLng(38.899895, -77.03401))
+                    .zoom(12)
+                    .build());
+            mapFragment = SupportMapFragment.newInstance(options);
+            transaction.add(R.id.container, mapFragment, "com.mapbox.map");
+            transaction.commit();
+        } else {
+            mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentByTag("com.mapbox.map");
+        }
+        if (mapFragment != null) {
+            mapFragment.getMapAsync(new OnMapReadyCallback() {
+                @Override
+                public void onMapReady(@NonNull MapboxMap mapboxMap) {
+                    MainActivity.this.mapboxMap = mapboxMap;
+                    mapboxMap.setStyle(Style.MAPBOX_STREETS, new Style.OnStyleLoaded() {
+                        @Override
+                        public void onStyleLoaded(@NonNull Style style) {
+                            enableLocationComponent(style);
+                        }
+                    });
+                }
+            });
+        }
     }
-
     @SuppressWarnings( {"MissingPermission"})
     private void enableLocationComponent(@NonNull Style loadedMapStyle) {
         if (PermissionsManager.areLocationPermissionsGranted(this)) {
-            LocationComponent locationComponent = map.getLocationComponent();
-            LocationComponentActivationOptions locationComponentActivationOptions =
-                    LocationComponentActivationOptions.builder(this, loadedMapStyle)
-                            .useDefaultLocationEngine(false)
-                            .build();
-            locationComponent.activateLocationComponent(locationComponentActivationOptions);
+            LocationComponent locationComponent = mapboxMap.getLocationComponent();
+            locationComponent.activateLocationComponent(
+                    LocationComponentActivationOptions.builder(this, loadedMapStyle).build());
             locationComponent.setLocationComponentEnabled(true);
             locationComponent.setCameraMode(CameraMode.TRACKING);
-            locationComponent.setRenderMode(RenderMode.COMPASS);
-            initLocationEngine();
+            locationComponent.setRenderMode(RenderMode.NORMAL);
         } else {
             permissionsManager = new PermissionsManager(this);
             permissionsManager.requestLocationPermissions(this);
         }
     }
 
-    @SuppressLint("MissingPermission")
-    private void initLocationEngine() {
-        locationEngine = LocationEngineProvider.getBestLocationEngine(this);
-        LocationEngineRequest request = new LocationEngineRequest.Builder(DEFAULT_INTERVAL_IN_MILLISECONDS)
-                .setPriority(LocationEngineRequest.PRIORITY_HIGH_ACCURACY)
-                .setMaxWaitTime(DEFAULT_MAX_WAIT_TIME).build();
-        locationEngine.requestLocationUpdates(request, callback, getMainLooper());
-        locationEngine.getLastLocation(callback);
 
+    public void openFragment(Fragment fragment) {
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        transaction.replace(R.id.container, fragment);
+        transaction.addToBackStack(null);
+        transaction.commit();
     }
-
-    private static class MainActivityLocationCallback implements LocationEngineCallback<LocationEngineResult> {
-
-        private final WeakReference<MainActivity> activityWeakReference;
-
-        MainActivityLocationCallback(MainActivity activity) {
-            this.activityWeakReference = new WeakReference<>(activity);
-        }
-
-        @Override
-        public void onSuccess(LocationEngineResult result) {
-            MainActivity activity = activityWeakReference.get();
-
-            if (activity != null) {
-                Location location = result.getLastLocation();
-
-                if (location == null) {
-                    return;
-                }
-
-                if (activity.map != null && location != null) {
-                    activity.map.getLocationComponent().forceLocationUpdate(result.getLastLocation());
-                }
-            }
-        }
-
-        @Override
-        public void onFailure(@NonNull Exception exception) {
-            Log.d("LocationChangeActivity", exception.getLocalizedMessage());
-            MainActivity activity = activityWeakReference.get();
-            if (activity != null) {
-                Toast.makeText(activity, exception.getLocalizedMessage(),
-                        Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
-
-    @Override
-    public void onExplanationNeeded(List<String> permissionsToExplain) {
-        //when the user denys the first time, we want to show an explanation why they need to accept.
-        CharSequence message = "We need your location to show your place.";
-        Toast toast = Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG);
-        toast.show();
-    }
-
-    @Override
-    public void onPermissionResult(boolean granted) {
-        if(granted){
-            if (map.getStyle() != null) {
-                enableLocationComponent(map.getStyle());
-            }
-        }
-        else{
-            CharSequence message = "Permission not granted.";
-            Toast toast = Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG);
-            toast.show();
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        permissionsManager.onRequestPermissionsResult(requestCode, permissions, grantResults);
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        mapView.onStart();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        mapView.onResume();
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        mapView.onPause();
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        mapView.onStop();
-    }
-
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        mapView.onSaveInstanceState(outState);
-    }
-
-    @Override
-    public void onLowMemory() {
-        super.onLowMemory();
-        mapView.onLowMemory();
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (locationEngine != null) {
-            locationEngine.removeLocationUpdates(callback);
-        }
-        mapView.onDestroy();
-    }
-
 
     public void startLoadingFirstPage(){
         this.isFirstPageLoading = true;
@@ -313,6 +172,32 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 activeNetwork.isConnectedOrConnecting();
     }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        permissionsManager.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
 
 
+    @Override
+    public void onExplanationNeeded(List<String> permissionsToExplain) {
+        //when the user denys the first time, we want to show an explanation why they need to accept.
+        CharSequence message = "We need your location to show your place.";
+        Toast toast = Toast.makeText(this, message, Toast.LENGTH_LONG);
+        toast.show();
+    }
+
+    @Override
+    public void onPermissionResult(boolean granted) {
+        if (granted) {
+            mapboxMap.getStyle(new Style.OnStyleLoaded() {
+                @Override
+                public void onStyleLoaded(@NonNull Style style) {
+                    enableLocationComponent(style);
+                }
+            });
+        } else {
+            Toast.makeText(this, "Permission not granted.", Toast.LENGTH_LONG).show();
+            finish();
+        }
+    }
 }
