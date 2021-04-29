@@ -66,14 +66,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 
 
-public class MainActivity extends AppCompatActivity implements PermissionsListener{
+public class MainActivity extends AppCompatActivity{
     ThreadPoolExecutor executor;
     private Boolean isFirstPageLoading = true;
 
     private BottomNavigationView bottomNavigation;
-    private MapboxMap mapboxMap;
-    private PermissionsManager permissionsManager;
-    private SupportMapFragment mapFragment;
+    private MyMapFragment mapFragment;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -101,49 +100,9 @@ public class MainActivity extends AppCompatActivity implements PermissionsListen
                     }
                 };
         bottomNavigation.setOnNavigationItemSelectedListener(navigationItemSelectedListener);
-        if (savedInstanceState == null) {
-            final FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-            MapboxMapOptions options = MapboxMapOptions.createFromAttributes(this, null);
-            options.camera(new CameraPosition.Builder()
-                    .target(new LatLng(38.899895, -77.03401))
-                    .zoom(12)
-                    .build());
-            mapFragment = SupportMapFragment.newInstance(options);
-            transaction.add(R.id.container, mapFragment, "com.mapbox.map");
-            transaction.commit();
-        } else {
-            mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentByTag("com.mapbox.map");
-        }
-        if (mapFragment != null) {
-            mapFragment.getMapAsync(new OnMapReadyCallback() {
-                @Override
-                public void onMapReady(@NonNull MapboxMap mapboxMap) {
-                    MainActivity.this.mapboxMap = mapboxMap;
-                    mapboxMap.setStyle(Style.MAPBOX_STREETS, new Style.OnStyleLoaded() {
-                        @Override
-                        public void onStyleLoaded(@NonNull Style style) {
-                            enableLocationComponent(style);
-                        }
-                    });
-                }
-            });
-        }
+        mapFragment = new MyMapFragment();
+        openFragment(mapFragment);
     }
-    @SuppressWarnings( {"MissingPermission"})
-    private void enableLocationComponent(@NonNull Style loadedMapStyle) {
-        if (PermissionsManager.areLocationPermissionsGranted(this)) {
-            LocationComponent locationComponent = mapboxMap.getLocationComponent();
-            locationComponent.activateLocationComponent(
-                    LocationComponentActivationOptions.builder(this, loadedMapStyle).build());
-            locationComponent.setLocationComponentEnabled(true);
-            locationComponent.setCameraMode(CameraMode.TRACKING);
-            locationComponent.setRenderMode(RenderMode.NORMAL);
-        } else {
-            permissionsManager = new PermissionsManager(this);
-            permissionsManager.requestLocationPermissions(this);
-        }
-    }
-
 
     public void openFragment(Fragment fragment) {
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
@@ -152,17 +111,18 @@ public class MainActivity extends AppCompatActivity implements PermissionsListen
         transaction.commit();
     }
 
-    public void startLoadingFirstPage(){
+    public void startLoadingFirstPage() {
         this.isFirstPageLoading = true;
     }
 
-    public void endLoadingFirstPage(){
+    public void endLoadingFirstPage() {
         this.isFirstPageLoading = false;
     }
 
-    public Boolean getIsFirstPageLoading(){
+    public Boolean getIsFirstPageLoading() {
         return this.isFirstPageLoading;
     }
+
     public boolean checkConnection() {
         ConnectivityManager cm =
                 (ConnectivityManager) this.getSystemService(this.CONNECTIVITY_SERVICE);
@@ -170,34 +130,5 @@ public class MainActivity extends AppCompatActivity implements PermissionsListen
         NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
         return activeNetwork != null &&
                 activeNetwork.isConnectedOrConnecting();
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        permissionsManager.onRequestPermissionsResult(requestCode, permissions, grantResults);
-    }
-
-
-    @Override
-    public void onExplanationNeeded(List<String> permissionsToExplain) {
-        //when the user denys the first time, we want to show an explanation why they need to accept.
-        CharSequence message = "We need your location to show your place.";
-        Toast toast = Toast.makeText(this, message, Toast.LENGTH_LONG);
-        toast.show();
-    }
-
-    @Override
-    public void onPermissionResult(boolean granted) {
-        if (granted) {
-            mapboxMap.getStyle(new Style.OnStyleLoaded() {
-                @Override
-                public void onStyleLoaded(@NonNull Style style) {
-                    enableLocationComponent(style);
-                }
-            });
-        } else {
-            Toast.makeText(this, "Permission not granted.", Toast.LENGTH_LONG).show();
-            finish();
-        }
     }
 }
