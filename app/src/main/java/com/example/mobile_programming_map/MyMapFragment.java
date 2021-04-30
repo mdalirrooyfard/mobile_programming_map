@@ -21,12 +21,6 @@ import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.maps.Style;
-import com.mapbox.mapboxsdk.plugins.annotation.OnSymbolClickListener;
-import com.mapbox.mapboxsdk.plugins.annotation.Symbol;
-import com.mapbox.mapboxsdk.plugins.annotation.SymbolManager;
-import com.mapbox.mapboxsdk.plugins.annotation.SymbolOptions;
-import com.mapbox.mapboxsdk.plugins.markerview.MarkerView;
-import com.mapbox.mapboxsdk.plugins.markerview.MarkerViewManager;
 
 import java.util.List;
 
@@ -58,6 +52,16 @@ public class MyMapFragment extends Fragment implements PermissionsListener {
             @Override
             public void onMapReady(@NonNull MapboxMap mapboxMap) {
                 MyMapFragment.this.mapboxMap = mapboxMap;
+                MyMapFragment.this.mapboxMap.addOnMapLongClickListener(new MapboxMap.OnMapLongClickListener() {
+                    @Override
+                    public boolean onMapLongClick(@NonNull LatLng point) {
+                        CharSequence message = "click";
+                        Toast toast = Toast.makeText(MyMapFragment.this.activity, message, Toast.LENGTH_LONG);
+                        toast.show();
+                        //Todo Fereshte
+                        return true;
+                    }
+                });
                 mapboxMap.setStyle(Style.MAPBOX_STREETS, new Style.OnStyleLoaded() {
                     @Override
                     public void onStyleLoaded(@NonNull Style style) {
@@ -66,7 +70,6 @@ public class MyMapFragment extends Fragment implements PermissionsListener {
                 });
             }
         });
-
     }
 
     @SuppressWarnings({"MissingPermission"})
