@@ -2,12 +2,17 @@ package com.example.mobile_programming_map;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.preference.Preference;
+import androidx.preference.PreferenceManager;
 
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MenuItem;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -23,9 +28,17 @@ public class MainActivity extends AppCompatActivity {
 
     private BottomNavigationView bottomNavigation;
     private MyMapFragment mapFragment;
+    private BookmarkFragment bookmarkFragment;
+    private SettingsFragment settingFragment;
+    int NightMode;
+    SharedPreferences sharedPreferences;
+    SharedPreferences.Editor editor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        sharedPreferences = getSharedPreferences("SharedPrefs", MODE_PRIVATE);
+        NightMode = sharedPreferences.getInt("dark_or_light", 1);
+        AppCompatDelegate.setDefaultNightMode(NightMode);
         super.onCreate(savedInstanceState);
         Mapbox.getInstance(this, getString(R.string.mapbox_access_token));
         setContentView(R.layout.activity_main);
@@ -40,10 +53,10 @@ public class MainActivity extends AppCompatActivity {
                                 openFragment(mapFragment);
                                 return true;
                             case R.id.bookmark:
-                                openFragment(BookmarkFragment.newInstance("", ""));
+                                openFragment(bookmarkFragment);
                                 return true;
                             case R.id.settings:
-                                openFragment(SettingsFragment.newInstance("", ""));
+                                openFragment(settingFragment);
                                 return true;
                         }
                         return false;
@@ -52,6 +65,8 @@ public class MainActivity extends AppCompatActivity {
         bottomNavigation.setOnNavigationItemSelectedListener(navigationItemSelectedListener);
         mapFragment = new MyMapFragment();
         openFragment(mapFragment);
+        bookmarkFragment = new BookmarkFragment();
+        settingFragment = new SettingsFragment();
     }
 
     public void openFragment(Fragment fragment) {
@@ -80,5 +95,18 @@ public class MainActivity extends AppCompatActivity {
         NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
         return activeNetwork != null &&
                 activeNetwork.isConnectedOrConnecting();
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+
+        NightMode = AppCompatDelegate.getDefaultNightMode();
+
+        sharedPreferences = getSharedPreferences("SharedPrefs", MODE_PRIVATE);
+        editor = sharedPreferences.edit();
+
+        editor.putInt("dark_or_light", NightMode);
+        editor.apply();
     }
 }
