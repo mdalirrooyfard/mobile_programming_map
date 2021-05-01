@@ -3,6 +3,7 @@ package com.example.mobile_programming_map;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.location.Location;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,6 +17,9 @@ import androidx.fragment.app.Fragment;
 import com.mapbox.android.core.permissions.PermissionsListener;
 import com.mapbox.android.core.permissions.PermissionsManager;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
+import com.mapbox.mapboxsdk.camera.CameraPosition;
+import com.mapbox.mapboxsdk.camera.CameraUpdate;
+import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.location.LocationComponent;
 import com.mapbox.mapboxsdk.location.LocationComponentActivationOptions;
@@ -34,7 +38,7 @@ public class MyMapFragment extends Fragment implements PermissionsListener {
     public MapboxMap mapboxMap;
     private PermissionsManager permissionsManager;
     private static final String ICON_ID = "ICON_ID";
-
+    private LocationComponent locationComponent;
 
     @Override
     public void onAttach(Context context) {
@@ -104,7 +108,15 @@ public class MyMapFragment extends Fragment implements PermissionsListener {
                 activity.findViewById(R.id.back_to_camera_tracking_mode).setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
-                        //todo change botton place and right function
+                        Location location = locationComponent.getLastKnownLocation();
+                        if (location != null) {
+                            CameraPosition position = new CameraPosition.Builder()
+                                    .target(new LatLng(location.getLatitude(), location.getLongitude()))
+                                    .zoom(16)
+                                    .tilt(20)
+                                    .build();
+                            mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(position), 2000);
+                        }
                     }
                 });
             }
@@ -116,7 +128,7 @@ public class MyMapFragment extends Fragment implements PermissionsListener {
     @SuppressWarnings({"MissingPermission"})
     private void enableLocationComponent(@NonNull Style loadedMapStyle) {
         if (PermissionsManager.areLocationPermissionsGranted(this.activity)) {
-            LocationComponent locationComponent = mapboxMap.getLocationComponent();
+            locationComponent = mapboxMap.getLocationComponent();
             locationComponent.activateLocationComponent(
                     LocationComponentActivationOptions.builder(this.activity, loadedMapStyle).build());
             locationComponent.setLocationComponentEnabled(true);
