@@ -1,37 +1,32 @@
 package com.example.mobile_programming_map;
 
-import android.graphics.Color;
-import android.util.Log;
+import android.database.Cursor;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
-import android.widget.TextView;
+import android.widget.Filter;
+import android.widget.Filterable;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.widget.AppCompatImageView;
-import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
-import java.util.Formatter;
+import java.util.List;
 
-public class MyListAdapter  extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+public class MyListAdapter  extends RecyclerView.Adapter<RecyclerView.ViewHolder> implements Filterable {
     private final MainActivity context;
-    private final ArrayList maintitle;
-    private final ArrayList subtitle;
-    private final ArrayList ids;
+    private final ArrayList<PinModel> pins;
+    private ArrayList<PinModel> ppins;
     private BookmarkFragment bf;
 //    private final Integer[] imgid;
 
-    public MyListAdapter(MainActivity context, BookmarkFragment bf, ArrayList maintitle, ArrayList subtitle, ArrayList ids) {
+    public MyListAdapter(MainActivity context, BookmarkFragment bf, ArrayList<PinModel> pins) {
 
         this.context=context;
-        this.maintitle=maintitle;
-        this.subtitle=subtitle;
-        this.ids = ids;
+        this.pins=pins;
         this.bf = bf;
-//        this.imgid=imgid;
+        this.ppins = new ArrayList<>(pins);
 
     }
 
@@ -49,15 +44,24 @@ public class MyListAdapter  extends RecyclerView.Adapter<RecyclerView.ViewHolder
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
 
-        ((PinViewHolder) holder).titleText.setText(maintitle.get(position).toString());
-        ((PinViewHolder) holder).subtitleText.setText(subtitle.get(position).toString());
+        ((PinViewHolder) holder).titleText.setText(pins.get(position).getMaintitle().toString());
+        ((PinViewHolder) holder).subtitleText.setText(pins.get(position).getLocation().toString());
         AppCompatImageView trash = holder.itemView.findViewById(R.id.bin);
         trash.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                int id = Integer.parseInt((String) ids.get(position));
+                int id = Integer.parseInt((String) pins.get(position).getId());
                 context.mydb.deleteLocation(id);
-                bf.updateData();
+                ArrayList<PinModel> p = new ArrayList<>();
+                Cursor data = context.mydb.getAllData();
+                while(data.moveToNext()){
+                    p.add(new PinModel(data.getString(0),data.getString(1), data.getString(2) + " , " + data.getString(3)));
+
+                }
+                pins.clear();
+                pins.addAll(p);
+                notifyDataSetChanged();
+
             }
         });
 
@@ -65,6 +69,36 @@ public class MyListAdapter  extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
     @Override
     public int getItemCount() {
-        return ids.size();
+        return pins.size();
     }
+
+    @Override
+    public Filter getFilter() {
+        return locFilter;
+    }
+    private Filter locFilter = new Filter() {
+        @Override
+        protected FilterResults performFiltering(CharSequence constraint) {
+            ArrayList<PinModel> filteredList = new ArrayList<>();
+            if (constraint == null || constraint.length() == 0) {
+                filteredList.addAll(ppins);
+            } else {
+                String filterPattern = constraint.toString().toLowerCase().trim();
+                for (PinModel item : ppins) {
+                    if (item.getMaintitle().toLowerCase().contains(filterPattern)) {
+                        filteredList.add(item);
+                    }
+                }
+            }
+            FilterResults results = new FilterResults();
+            results.values = filteredList;
+            return results;
+        }
+        @Override
+        protected void publishResults(CharSequence constraint, FilterResults results) {
+            pins.clear();
+            pins.addAll((ArrayList) results.values);
+            notifyDataSetChanged();
+        }
+    };
 }

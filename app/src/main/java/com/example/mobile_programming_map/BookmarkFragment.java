@@ -4,6 +4,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.os.Bundle;
 
+import androidx.appcompat.widget.SearchView;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -17,6 +18,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListAdapter;
 import android.widget.ListView;
+
 
 import java.util.ArrayList;
 
@@ -42,40 +44,49 @@ public class BookmarkFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.bookmark, container, false);
+
         Cursor data = activity.mydb.getAllData();
-        ArrayList<String> listData = new ArrayList<>();
-        ArrayList<String> list_loc = new ArrayList<>();
-        ArrayList<String> ids = new ArrayList<>();
+        ArrayList<PinModel> pins = new ArrayList<>();
+
         while(data.moveToNext()){
-            ids.add(data.getString(0));
-            listData.add(data.getString(1));
-            list_loc.add(data.getString(2) + " , " + data.getString(3));
+            pins.add(new PinModel(data.getString(0),data.getString(1), data.getString(2) + " , " + data.getString(3)));
+
         }
         RecyclerView recyclerView =  rootView.findViewById(R.id.listView1);
         recyclerView.setLayoutManager(new LinearLayoutManager(activity));
-        MyListAdapter adapter = new MyListAdapter(activity, this,  listData, list_loc, ids);
+        MyListAdapter adapter = new MyListAdapter(activity, this,  pins);
         recyclerView.setAdapter(adapter);
 
+        SearchView searcher = rootView.findViewById(R.id.search_bar);
 
-        Log.i("hh", "I AMMM HEREE");
+        searcher.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                adapter.getFilter().filter(newText);
+                return false;
+            }
+        });
         return rootView;
     }
-    public void updateData(){
-
-        Cursor data = activity.mydb.getAllData();
-        ArrayList<String> listData = new ArrayList<>();
-        ArrayList<String> list_loc = new ArrayList<>();
-        ArrayList<String> ids = new ArrayList<>();
-        while(data.moveToNext()){
-            ids.add(data.getString(0));
-            listData.add(data.getString(1));
-            list_loc.add(data.getString(2) + " , " + data.getString(3));
-        }
-        RecyclerView recyclerView =  activity.findViewById(R.id.listView1);
-        recyclerView.setLayoutManager(new LinearLayoutManager(activity));
-        MyListAdapter adapter = new MyListAdapter(activity, this, listData, list_loc, ids);
-        recyclerView.setAdapter(adapter);
-    }
+//    public void updateData(){
+//
+//        Cursor data = activity.mydb.getAllData();
+//        ArrayList<PinModel> pins = new ArrayList<>();
+//
+//        while(data.moveToNext()){
+//            pins.add(new PinModel(data.getString(0),data.getString(1), data.getString(2) + " , " + data.getString(3)));
+//
+//        }
+//        RecyclerView recyclerView =  activity.findViewById(R.id.listView1);
+//        recyclerView.setLayoutManager(new LinearLayoutManager(activity));
+//        MyListAdapter adapter = new MyListAdapter(activity, this, pins);
+//        recyclerView.setAdapter(adapter);
+//    }
 }
 
 
