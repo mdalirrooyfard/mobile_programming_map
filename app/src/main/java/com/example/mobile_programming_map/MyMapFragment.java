@@ -3,11 +3,14 @@ package com.example.mobile_programming_map;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.location.Location;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -18,7 +21,6 @@ import com.mapbox.android.core.permissions.PermissionsListener;
 import com.mapbox.android.core.permissions.PermissionsManager;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.camera.CameraPosition;
-import com.mapbox.mapboxsdk.camera.CameraUpdate;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.location.LocationComponent;
@@ -30,7 +32,12 @@ import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.maps.Style;
 
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.List;
+
+import static com.mapbox.mapboxsdk.Mapbox.getApplicationContext;
 
 public class MyMapFragment extends Fragment implements PermissionsListener {
     private MainActivity activity;
@@ -63,31 +70,36 @@ public class MyMapFragment extends Fragment implements PermissionsListener {
                 MyMapFragment.this.mapboxMap.addOnMapLongClickListener(new MapboxMap.OnMapLongClickListener() {
                     @Override
                     public boolean onMapLongClick(@NonNull LatLng point) {
-                        CharSequence message = "click";
-                        Toast toast = Toast.makeText(MyMapFragment.this.activity, message, Toast.LENGTH_LONG);
-                        toast.show();
                         mapboxMap.addMarker(new MarkerOptions()
                                 .position(point));
                         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-                        // Get the layout inflater
                         LayoutInflater inflater = requireActivity().getLayoutInflater();
-
-                        // Inflate and set the layout for the dialog
-                        // Pass null as the parent view because its going in the dialog layout
+                        View content =  inflater.inflate(R.layout.modal, null);
+                        EditText name_text = (EditText) content.findViewById(R.id.name);
                         builder.setView(inflater.inflate(R.layout.modal, null))
-                                // Add action buttons
                                 .setPositiveButton(R.string.save, new DialogInterface.OnClickListener() {
                                     @Override
                                     public void onClick(DialogInterface dialog, int id) {
-                                        // save
+                                        String name = name_text.getText().toString();
+                                        DecimalFormat df = new DecimalFormat("#.####");
+                                        df.setRoundingMode(RoundingMode.CEILING);
+                                        if(activity.mydb.insertLocation(name,
+                                                df.format(point.getLatitude()),
+                                                df.format(point.getLongitude()))){
+                                            Toast.makeText(getApplicationContext(), "done",
+                                                    Toast.LENGTH_SHORT).show();
+                                        } else{
+                                            Toast.makeText(getApplicationContext(), "not done",
+                                                    Toast.LENGTH_SHORT).show();
+                                        }
                                     }
+
                                 })
                                 .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
                                     public void onClick(DialogInterface dialog, int id) {
-                                        //cancel
+                                        return;
                                     }
                                 });
-                        View content =  inflater.inflate(R.layout.modal, null);
                         builder.setView(content);
                         TextView lat = (TextView) content.findViewById(R.id.Lat);
                         lat.setText(String.valueOf("Latitude = " + point.getLatitude()));

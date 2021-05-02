@@ -14,11 +14,15 @@ import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MenuItem;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.mapbox.geojson.Point;
 import com.mapbox.mapboxsdk.Mapbox;
 import com.mapbox.mapboxsdk.annotations.Marker;
+
+import java.util.ArrayList;
 import java.util.concurrent.ThreadPoolExecutor;
 
 
@@ -33,12 +37,14 @@ public class MainActivity extends AppCompatActivity {
     int NightMode;
     SharedPreferences sharedPreferences;
     SharedPreferences.Editor editor;
+    DbHelper mydb;
+    ArrayList db_data;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        sharedPreferences = getSharedPreferences("SharedPrefs", MODE_PRIVATE);
-        NightMode = sharedPreferences.getInt("dark_or_light", 1);
-        AppCompatDelegate.setDefaultNightMode(NightMode);
+//        sharedPreferences = getSharedPreferences("SharedPrefs", MODE_PRIVATE);
+//        NightMode = sharedPreferences.getInt("dark_or_light", 1);
+//        AppCompatDelegate.setDefaultNightMode(NightMode);
         super.onCreate(savedInstanceState);
         Mapbox.getInstance(this, getString(R.string.mapbox_access_token));
         setContentView(R.layout.activity_main);
@@ -67,6 +73,10 @@ public class MainActivity extends AppCompatActivity {
         openFragment(mapFragment);
         bookmarkFragment = new BookmarkFragment();
         settingFragment = new SettingsFragment();
+
+        mydb = new DbHelper(this);
+        ArrayList db_data = mydb.getAllCotacts();
+
     }
 
     public void openFragment(Fragment fragment) {

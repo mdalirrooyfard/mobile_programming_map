@@ -20,7 +20,7 @@
         android:text="Long"
         android:gravity="center_horizontal" />
     <EditText
-        android:id="@+id/username"
+        android:id="@+id/name"
         android:inputType="textEmailAddress"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
