@@ -46,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
 //        NightMode = sharedPreferences.getInt("dark_or_light", 1);
 //        AppCompatDelegate.setDefaultNightMode(NightMode);
         super.onCreate(savedInstanceState);
+
         Mapbox.getInstance(this, getString(R.string.mapbox_access_token));
         setContentView(R.layout.activity_main);
         bottomNavigation = findViewById(R.id.bottom_navigation);
@@ -71,6 +72,7 @@ public class MainActivity extends AppCompatActivity {
         bottomNavigation.setOnNavigationItemSelectedListener(navigationItemSelectedListener);
         mapFragment = new MyMapFragment();
         openFragment(mapFragment);
+        Log.i("here", "onCreate: HEREEE");
         bookmarkFragment = new BookmarkFragment();
         settingFragment = new SettingsFragment();
 
@@ -118,5 +120,6 @@ public class MainActivity extends AppCompatActivity {
 
         editor.putInt("dark_or_light", NightMode);
         editor.apply();
+
     }
 }

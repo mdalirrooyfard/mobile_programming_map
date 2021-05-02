@@ -1,6 +1,8 @@
 package com.example.mobile_programming_map;
 
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -9,6 +11,7 @@ import androidx.fragment.app.Fragment;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragment;
 import androidx.preference.PreferenceFragmentCompat;
+import androidx.preference.PreferenceManager;
 
 import android.view.LayoutInflater;
 import android.view.View;
@@ -27,17 +30,27 @@ public class SettingsFragment extends PreferenceFragmentCompat {
     public void onAttach(Context context) {
         super.onAttach(context);
         activity = (MainActivity) context;
+
+
+
     }
 
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         setPreferencesFromResource(R.xml.root_preferences, rootKey);
         ((AppCompatActivity) getActivity()).getSupportActionBar().show();
-
         Preference dark_mode = findPreference("dark_or_light");
+
         assert dark_mode != null;
+        dark_mode.setDefaultValue(false);
         dark_mode.setOnPreferenceChangeListener((preference, newValue) -> {
             change_theme((Boolean) newValue);
+            activity.finish();
+            Intent refresh = new Intent(activity, MainActivity.class);
+
+            startActivity(refresh);
+            activity.overridePendingTransition(0,0);;
+
             return true;
         });
         Preference delete_data = findPreference("Delete data");
@@ -47,6 +60,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             @Override
             public boolean onPreferenceClick(Preference preference) {
                 activity.mydb.deleteAllData();
+
                 return true;
             }
         });

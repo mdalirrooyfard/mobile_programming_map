@@ -1,7 +1,7 @@
 <PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
     <SwitchPreferenceCompat
             app:key="dark_or_light"
-            app:defaultValue="False"
+            app:defaultValue="false"
             app:title="Dark Mode"
             app:summary="Delete App Data From Phone"
         />
