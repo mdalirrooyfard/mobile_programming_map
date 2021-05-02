@@ -7,11 +7,11 @@ tools:context=".BookmarkFragment">
 
 
 <androidx.appcompat.widget.SearchView
-android:layout_width="wrap_content"
+android:layout_width="match_parent"
 android:layout_height="wrap_content"
 android:id="@+id/search_bar"/>
 <LinearLayout
-    android:layout_width="wrap_content"
+    android:layout_width="fill_parent"
     android:layout_height="wrap_content"
     android:id="@+id/scrollView"
     android:layout_below="@+id/search_bar"
@@ -21,13 +21,11 @@ android:id="@+id/search_bar"/>
     android:layout_alignParentRight="true"
     android:layout_alignParentEnd="true">
 
-    <ListView
+    <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/listView1"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true" >
-    </ListView>
+        android:layout_height="wrap_content">
+    </androidx.recyclerview.widget.RecyclerView>
 
 </LinearLayout>
 

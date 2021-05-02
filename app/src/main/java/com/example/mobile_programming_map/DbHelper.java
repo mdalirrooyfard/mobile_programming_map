@@ -9,6 +9,7 @@ import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
+import android.util.Pair;
 
 public class DbHelper extends SQLiteOpenHelper {
 
@@ -93,7 +94,7 @@ public class DbHelper extends SQLiteOpenHelper {
     }
 
 
-    public ArrayList<String> getAllCotacts() {
+    public ArrayList<String> getAllContacts() {
         ArrayList<String> array_list = new ArrayList<String>();
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor res =  db.rawQuery( "select * from locations", null );
@@ -105,6 +106,22 @@ public class DbHelper extends SQLiteOpenHelper {
         }
         Log.i("arraylist", "onClick: " + array_list);
         return array_list;
+    }
+
+    public Pair getAllPositions() {
+        ArrayList<Pair> array_list = new ArrayList<Pair>();
+        ArrayList<String> array_names = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor res =  db.rawQuery( "select * from locations", null );
+        res.moveToFirst();
+
+        while(res.isAfterLast() == false){
+            array_names.add(res.getString(res.getColumnIndex(BOOKMARK_COLUMN_NAME)));
+            array_list.add(new Pair(res.getString(res.getColumnIndex(BOOKMARK_COLUMN_LAT)),res.getString(res.getColumnIndex(BOOKMARK_COLUMN_LONG))));
+            res.moveToNext();
+        }
+        Log.i("arraylist", "onClick: " + array_list);
+        return new Pair(array_list, array_names);
     }
 
     public void deleteAllData(){

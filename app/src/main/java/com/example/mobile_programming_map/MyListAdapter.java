@@ -1,44 +1,70 @@
 package com.example.mobile_programming_map;
 
-import android.app.Activity;
-
+import android.graphics.Color;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import java.util.ArrayList;
+import androidx.annotation.NonNull;
+import androidx.appcompat.widget.AppCompatImageView;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
-public class MyListAdapter extends ArrayAdapter<String> {
-    private final Activity context;
+import java.util.ArrayList;
+import java.util.Formatter;
+
+public class MyListAdapter  extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+    private final MainActivity context;
     private final ArrayList maintitle;
     private final ArrayList subtitle;
+    private final ArrayList ids;
+    private BookmarkFragment bf;
 //    private final Integer[] imgid;
 
-    public MyListAdapter(Activity context, ArrayList maintitle, ArrayList subtitle) {
-        super(context, R.layout.my_list_view, maintitle);
+    public MyListAdapter(MainActivity context, BookmarkFragment bf, ArrayList maintitle, ArrayList subtitle, ArrayList ids) {
+
         this.context=context;
         this.maintitle=maintitle;
         this.subtitle=subtitle;
+        this.ids = ids;
+        this.bf = bf;
 //        this.imgid=imgid;
 
     }
 
-    public View getView(int position,View view,ViewGroup parent) {
+
+
+    @NonNull
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         LayoutInflater inflater=context.getLayoutInflater();
-        View rowView=inflater.inflate(R.layout.my_list_view, null,true);
+        View rowView=inflater.inflate(R.layout.my_list_view, parent,false);
 
-        TextView titleText = (TextView) rowView.findViewById(R.id.title);
-        TextView subtitleText = (TextView) rowView.findViewById(R.id.subtitle);
-        ImageView imageView = (ImageView) rowView.findViewById(R.id.icon);
+        return new PinViewHolder(rowView);
 
-        titleText.setText(maintitle.get(position).toString());
-        subtitleText.setText(subtitle.get(position).toString());
+    }
 
-        return rowView;
+    @Override
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
 
-    };
+        ((PinViewHolder) holder).titleText.setText(maintitle.get(position).toString());
+        ((PinViewHolder) holder).subtitleText.setText(subtitle.get(position).toString());
+        AppCompatImageView trash = holder.itemView.findViewById(R.id.bin);
+        trash.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int id = Integer.parseInt((String) ids.get(position));
+                context.mydb.deleteLocation(id);
+                bf.updateData();
+            }
+        });
+
+    }
+
+    @Override
+    public int getItemCount() {
+        return ids.size();
+    }
 }

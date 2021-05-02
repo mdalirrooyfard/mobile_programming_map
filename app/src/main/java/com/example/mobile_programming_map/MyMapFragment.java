@@ -4,9 +4,16 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.drawable.Drawable;
+
 import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
+import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,10 +22,15 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
+import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.fragment.app.Fragment;
 
 import com.mapbox.android.core.permissions.PermissionsListener;
 import com.mapbox.android.core.permissions.PermissionsManager;
+import com.mapbox.mapboxsdk.annotations.Icon;
+import com.mapbox.mapboxsdk.annotations.IconFactory;
+import com.mapbox.mapboxsdk.annotations.Marker;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.camera.CameraPosition;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
@@ -45,6 +57,7 @@ public class MyMapFragment extends Fragment implements PermissionsListener {
     public MapboxMap mapboxMap;
     private PermissionsManager permissionsManager;
     private static final String ICON_ID = "ICON_ID";
+    private Marker current_marker;
     private LocationComponent locationComponent;
 
     @Override
@@ -57,6 +70,15 @@ public class MyMapFragment extends Fragment implements PermissionsListener {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         return inflater.inflate(R.layout.map, container, false);
     }
+    public Icon drawableToIcon(@NonNull Context context, Drawable vectorDrawable, int colorRes) {
+        Bitmap bitmap = Bitmap.createBitmap(vectorDrawable.getIntrinsicWidth(),
+                vectorDrawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        vectorDrawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+        DrawableCompat.setTint(vectorDrawable, colorRes);
+        vectorDrawable.draw(canvas);
+        return IconFactory.getInstance(context).fromBitmap(bitmap);
+    }
 
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
@@ -67,11 +89,32 @@ public class MyMapFragment extends Fragment implements PermissionsListener {
             @Override
             public void onMapReady(@NonNull MapboxMap mapboxMap) {
                 MyMapFragment.this.mapboxMap = mapboxMap;
+
+                Pair pair = activity.mydb.getAllPositions();
+                ArrayList longlats = (ArrayList)pair.first;
+                ArrayList names = (ArrayList)pair.second;
+                for (int i = 0; i < longlats.size(); i++){
+
+                    LatLng p = new LatLng(Double.parseDouble((String)((Pair)longlats.get(i)).first), Double.parseDouble((String)((Pair)longlats.get(i)).second));
+                    Drawable iconDrawables = ContextCompat.getDrawable(activity, R.drawable.ic_baseline_location_on_24);
+                    Icon icons = drawableToIcon(activity, iconDrawables, Color.BLUE);
+                    mapboxMap.addMarker(new MarkerOptions()
+                            .position(p)
+                            .title((String)names.get(i))
+                            .icon(icons));
+                }
                 MyMapFragment.this.mapboxMap.addOnMapLongClickListener(new MapboxMap.OnMapLongClickListener() {
                     @Override
                     public boolean onMapLongClick(@NonNull LatLng point) {
-                        mapboxMap.addMarker(new MarkerOptions()
-                                .position(point));
+                        if(current_marker != null){
+                            current_marker.remove();}
+
+                        Drawable iconDrawable = ContextCompat.getDrawable(activity, R.drawable.ic_baseline_location_on_24);
+                        Icon icon = drawableToIcon(activity, iconDrawable, Color.RED);
+                        current_marker = mapboxMap.addMarker(new MarkerOptions()
+                                .position(point)
+                                .icon(icon));
+
                         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
                         LayoutInflater inflater = requireActivity().getLayoutInflater();
                         View content =  inflater.inflate(R.layout.modal, null);
@@ -97,7 +140,7 @@ public class MyMapFragment extends Fragment implements PermissionsListener {
                                 })
                                 .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
                                     public void onClick(DialogInterface dialog, int id) {
-                                        return;
+
                                     }
                                 });
                         builder.setView(content);

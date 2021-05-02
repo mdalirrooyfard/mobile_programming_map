@@ -5,8 +5,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
-import androidx.preference.Preference;
-import androidx.preference.PreferenceManager;
 
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
@@ -14,13 +12,9 @@ import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MenuItem;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.mapbox.geojson.Point;
 import com.mapbox.mapboxsdk.Mapbox;
-import com.mapbox.mapboxsdk.annotations.Marker;
 
 import java.util.ArrayList;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -77,7 +71,7 @@ public class MainActivity extends AppCompatActivity {
         settingFragment = new SettingsFragment();
 
         mydb = new DbHelper(this);
-        ArrayList db_data = mydb.getAllCotacts();
+        ArrayList db_data = mydb.getAllContacts();
 
     }
 
