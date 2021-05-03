@@ -1,8 +1,10 @@
 package com.example.mobile_programming_map;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -26,6 +28,11 @@ import androidx.fragment.app.Fragment;
 
 import com.mapbox.android.core.permissions.PermissionsListener;
 import com.mapbox.android.core.permissions.PermissionsManager;
+import com.mapbox.api.geocoding.v5.models.CarmenFeature;
+import com.mapbox.geojson.Feature;
+import com.mapbox.geojson.FeatureCollection;
+import com.mapbox.geojson.Point;
+import com.mapbox.mapboxsdk.Mapbox;
 import com.mapbox.mapboxsdk.annotations.Icon;
 import com.mapbox.mapboxsdk.annotations.IconFactory;
 import com.mapbox.mapboxsdk.annotations.Marker;
@@ -49,8 +56,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.mapbox.mapboxsdk.Mapbox.getApplicationContext;
+import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconImage;
+import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconOffset;
+
+import com.mapbox.mapboxsdk.plugins.places.autocomplete.PlaceAutocomplete;
+import com.mapbox.mapboxsdk.plugins.places.autocomplete.model.PlaceOptions;
+import com.mapbox.mapboxsdk.style.layers.SymbolLayer;
+import com.mapbox.mapboxsdk.style.sources.GeoJsonSource;
 
 public class MyMapFragment extends Fragment implements PermissionsListener {
+    private static final int REQUEST_CODE_AUTOCOMPLETE = 1;
     private MainActivity activity;
     public MapView mapView;
     public MapboxMap mapboxMap;
@@ -60,6 +75,8 @@ public class MyMapFragment extends Fragment implements PermissionsListener {
     private LocationComponent locationComponent;
     private LatLng start_point;
     private ArrayList<Marker> markers;
+    private String geojsonSourceLayerId = "geojsonSourceLayerId";
+    private String symbolIconId = "symbolIconId";
 
     @Override
     public void onAttach(Context context) {
@@ -101,22 +118,25 @@ public class MyMapFragment extends Fragment implements PermissionsListener {
         }
     }
     public  void  DeleteAllMarkersBut(LatLng point){
-        for(Marker m : markers){
-            if(m.getPosition().equals(point)){
-                mapboxMap.deselectMarker(m);
-            }else{
 
-                Drawable iconDrawables = ContextCompat.getDrawable(activity, R.drawable.ic_baseline_location_on_24);
-                Icon icons = drawableToIcon(activity, iconDrawables, Color.RED);
+            for(Marker m : markers){
+                if(m.getPosition().equals(point)){
+                    mapboxMap.deselectMarker(m);
+                }else{
 
-                mapboxMap.addMarker(new MarkerOptions()
-                        .position(point)
-                        .title((m.getTitle()))
-                        .icon(icons));
-                mapboxMap.deselectMarker(m);
+                    Drawable iconDrawables = ContextCompat.getDrawable(activity, R.drawable.ic_baseline_location_on_24);
+                    Icon icons = drawableToIcon(activity, iconDrawables, Color.RED);
+
+                        mapboxMap.addMarker(new MarkerOptions()
+                                .position(point)
+                                .title((m.getTitle()))
+                                .icon(icons));
+
+
+                    mapboxMap.deselectMarker(m);
+                }
+
             }
-
-        }
     }
 
     @Override
@@ -190,6 +210,12 @@ public class MyMapFragment extends Fragment implements PermissionsListener {
                 mapboxMap.setStyle(Style.MAPBOX_STREETS, new Style.OnStyleLoaded() {
                     @Override
                     public void onStyleLoaded(@NonNull Style style) {
+                        initSearchFab();
+                        // Create an empty GeoJSON source using the empty feature collection
+                        setUpSource(style);
+
+                        // Set up a new symbol layer for displaying the searched location's feature coordinates
+                        setupLayer(style);
                         if(start_point == null){
                             enableLocationComponent(style, CameraMode.TRACKING);
                         }else{
@@ -201,7 +227,6 @@ public class MyMapFragment extends Fragment implements PermissionsListener {
                     Log.i("HEYYY", "onViewCreated HEYYYYYY: "+ start_point.getLatitude());
                     moveToPoint(start_point);
                     DeleteAllMarkersBut(start_point);
-
                 }
                 activity.findViewById(R.id.back_to_camera_tracking_mode).setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -235,7 +260,70 @@ public class MyMapFragment extends Fragment implements PermissionsListener {
             permissionsManager.requestLocationPermissions(this.activity);
         }
     }
+    private void initSearchFab() {
+        activity.findViewById(R.id.fab_location_search).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new PlaceAutocomplete.IntentBuilder()
+                        .accessToken(Mapbox.getAccessToken() != null ? Mapbox.getAccessToken() : getString(R.string.mapbox_access_token))
+                        .placeOptions(PlaceOptions.builder()
+                                .backgroundColor(Color.parseColor("#EEEEEE"))
+                                .limit(10)
+                                .build(PlaceOptions.MODE_CARDS))
+                        .build(activity);
+                startActivityForResult(intent, REQUEST_CODE_AUTOCOMPLETE);
+            }
+        });
+    }
 
+    private void setUpSource(@NonNull Style loadedMapStyle) {
+        loadedMapStyle.addSource(new GeoJsonSource(geojsonSourceLayerId));
+    }
+
+    private void setupLayer(@NonNull Style loadedMapStyle) {
+        loadedMapStyle.addLayer(new SymbolLayer("SYMBOL_LAYER_ID", geojsonSourceLayerId).withProperties(
+                iconImage(symbolIconId),
+                iconOffset(new Float[] {0f, -8f})
+        ));
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == Activity.RESULT_OK && requestCode == REQUEST_CODE_AUTOCOMPLETE) {
+
+            // Retrieve selected location's CarmenFeature
+            CarmenFeature selectedCarmenFeature = PlaceAutocomplete.getPlace(data);
+
+            // Create a new FeatureCollection and add a new Feature to it using selectedCarmenFeature above.
+            // Then retrieve and update the source designated for showing a selected location's symbol layer icon
+
+            if (mapboxMap != null) {
+                Style style = mapboxMap.getStyle();
+                if (style != null) {
+                    GeoJsonSource source = style.getSourceAs(geojsonSourceLayerId);
+                    if (source != null) {
+                        source.setGeoJson(FeatureCollection.fromFeatures(
+                                new Feature[] {Feature.fromJson(selectedCarmenFeature.toJson())}));
+                    }
+
+            // Move map camera to the selected location
+                    LatLng point = new LatLng(((Point) selectedCarmenFeature.geometry()).latitude(),
+                            ((Point) selectedCarmenFeature.geometry()).longitude());
+                    moveToPoint(point);
+                    Drawable iconDrawables = ContextCompat.getDrawable(activity, R.drawable.ic_baseline_location_on_24);
+                    Icon icons = drawableToIcon(activity, iconDrawables, Color.RED);
+                    mapboxMap.addMarker(new MarkerOptions()
+                            .position(point)
+                            .title(selectedCarmenFeature.placeName())
+                            .icon(icons)
+                            );
+
+
+                }
+            }
+        }
+    }
     public void moveToPoint(LatLng point){
         CameraPosition pos = new CameraPosition.Builder()
                 .target(point)
