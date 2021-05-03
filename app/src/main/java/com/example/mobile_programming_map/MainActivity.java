@@ -54,6 +54,9 @@ public class MainActivity extends AppCompatActivity {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_NETWORK_STATE) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_NETWORK_STATE}, 1);
         }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+        }
         Mapbox.getInstance(this, getString(R.string.mapbox_access_token));
         setContentView(R.layout.activity_main);
         bottomNavigation = findViewById(R.id.bottom_navigation);
@@ -79,7 +82,6 @@ public class MainActivity extends AppCompatActivity {
                 };
         bottomNavigation.setOnNavigationItemSelectedListener(navigationItemSelectedListener);
         mapFragment = new MyMapFragment();
-        mapFragment.setStart_point(null);
         openFragment(mapFragment);
         Log.i("here", "onCreate: HEREEE");
         bookmarkFragment = new BookmarkFragment();

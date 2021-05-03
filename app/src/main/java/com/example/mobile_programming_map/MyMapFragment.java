@@ -67,7 +67,7 @@ import com.mapbox.mapboxsdk.plugins.places.autocomplete.model.PlaceOptions;
 import com.mapbox.mapboxsdk.style.layers.SymbolLayer;
 import com.mapbox.mapboxsdk.style.sources.GeoJsonSource;
 
-public class MyMapFragment extends Fragment implements PermissionsListener {
+public class MyMapFragment extends Fragment{
     private static final int REQUEST_CODE_AUTOCOMPLETE = 1;
     private MainActivity activity;
     public MapView mapView;
@@ -76,7 +76,7 @@ public class MyMapFragment extends Fragment implements PermissionsListener {
     private static final String ICON_ID = "ICON_ID";
     private Marker current_marker;
     private LocationComponent locationComponent;
-    private LatLng start_point;
+    private LatLng start_point = null;
     private ArrayList<Marker> markers;
     private String geojsonSourceLayerId = "geojsonSourceLayerId";
     private String symbolIconId = "symbolIconId";
@@ -146,8 +146,6 @@ public class MyMapFragment extends Fragment implements PermissionsListener {
         super.onViewCreated(view, savedInstanceState);
         this.mapView = (MapView) view.findViewById(R.id.mapView);
         this.mapView.onCreate(savedInstanceState);
-
-
         this.mapView.getMapAsync(new OnMapReadyCallback() {
             @Override
             public void onMapReady(@NonNull MapboxMap mapboxMap) {
@@ -155,8 +153,26 @@ public class MyMapFragment extends Fragment implements PermissionsListener {
                 MyMapFragment.this.mapboxMap = mapboxMap;
 
                 addAllMarkers();
-
-
+                mapboxMap.setStyle(Style.MAPBOX_STREETS, new Style.OnStyleLoaded() {
+                    @Override
+                    public void onStyleLoaded(@NonNull Style style) {
+                        // Create an empty GeoJSON source using the empty feature collection
+                        // Set up a new symbol layer for displaying the searched location's feature coordinates
+                        if(start_point == null){
+                            enableLocationComponent(style, CameraMode.TRACKING);
+                        }else{
+                            enableLocationComponent(style, CameraMode.NONE);
+                        }
+                        initSearchFab();
+                        setUpSource(style);
+                        setupLayer(style);
+                    }
+                });
+                if(start_point != null){
+                    Log.i("HEYYY", "onViewCreated HEYYYYYY: "+ start_point.getLatitude());
+                    moveToPoint(start_point);
+                    DeleteAllMarkersBut(start_point);
+                }
                 MyMapFragment.this.mapboxMap.addOnMapLongClickListener(new MapboxMap.OnMapLongClickListener() {
                     @Override
                     public boolean onMapLongClick(@NonNull LatLng point) {
@@ -215,27 +231,7 @@ public class MyMapFragment extends Fragment implements PermissionsListener {
                         return true;
                     }
                 });
-                mapboxMap.setStyle(Style.MAPBOX_STREETS, new Style.OnStyleLoaded() {
-                    @Override
-                    public void onStyleLoaded(@NonNull Style style) {
-                        initSearchFab();
-                        // Create an empty GeoJSON source using the empty feature collection
-                        setUpSource(style);
 
-                        // Set up a new symbol layer for displaying the searched location's feature coordinates
-                        setupLayer(style);
-                        if(start_point == null){
-                            enableLocationComponent(style, CameraMode.TRACKING);
-                        }else{
-                            enableLocationComponent(style, CameraMode.NONE);
-                        }
-                    }
-                });
-                if(start_point != null){
-                    Log.i("HEYYY", "onViewCreated HEYYYYYY: "+ start_point.getLatitude());
-                    moveToPoint(start_point);
-                    DeleteAllMarkersBut(start_point);
-                }
                 activity.findViewById(R.id.back_to_camera_tracking_mode).setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
@@ -256,17 +252,19 @@ public class MyMapFragment extends Fragment implements PermissionsListener {
 
     @SuppressWarnings({"MissingPermission"})
     private void enableLocationComponent(@NonNull Style loadedMapStyle, int mode) {
-        if (PermissionsManager.areLocationPermissionsGranted(this.activity)) {
+        //if (PermissionsManager.areLocationPermissionsGranted(this.activity)) {
+        if (ContextCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED){
             locationComponent = mapboxMap.getLocationComponent();
             locationComponent.activateLocationComponent(
                     LocationComponentActivationOptions.builder(this.activity, loadedMapStyle).build());
             locationComponent.setLocationComponentEnabled(true);
             locationComponent.setCameraMode(mode);
             locationComponent.setRenderMode(RenderMode.NORMAL);
-
         } else {
-            permissionsManager = new PermissionsManager(this);
-            permissionsManager.requestLocationPermissions(this.activity);
+            //permissionsManager = new PermissionsManager(this);
+            //permissionsManager.requestLocationPermissions(this.activity);
+            ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+            enableLocationComponent(loadedMapStyle, mode);
         }
     }
 
@@ -342,37 +340,37 @@ public class MyMapFragment extends Fragment implements PermissionsListener {
                 .build();
         mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(pos), 2000);
     }
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        permissionsManager.onRequestPermissionsResult(requestCode, permissions, grantResults);
-    }
+ //   @Override
+//    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+//        permissionsManager.onRequestPermissionsResult(requestCode, permissions, grantResults);
+//    }
 
     public void setStart_point(LatLng start_point) {
         this.start_point = start_point;
     }
 
-    @Override
-    public void onExplanationNeeded(List<String> permissionsToExplain) {
-        //when the user denys the first time, we want to show an explanation why they need to accept.
-        CharSequence message = "We need your location to show your place.";
-        Toast toast = Toast.makeText(this.activity, message, Toast.LENGTH_LONG);
-        toast.show();
-    }
-
-    @Override
-    public void onPermissionResult(boolean granted) {
-        if (granted) {
-            mapboxMap.getStyle(new Style.OnStyleLoaded() {
-                @Override
-                public void onStyleLoaded(@NonNull Style style) {
-                    enableLocationComponent(style, CameraMode.TRACKING);
-                }
-            });
-        } else {
-            Toast.makeText(this.activity, "Permission not granted.", Toast.LENGTH_LONG).show();
-            this.activity.finish();
-        }
-    }
+//    @Override
+//    public void onExplanationNeeded(List<String> permissionsToExplain) {
+//        //when the user denys the first time, we want to show an explanation why they need to accept.
+//        CharSequence message = "We need your location to show your place.";
+//        Toast toast = Toast.makeText(this.activity, message, Toast.LENGTH_LONG);
+//        toast.show();
+//    }
+//
+//    @Override
+//    public void onPermissionResult(boolean granted) {
+//        if (granted) {
+//            mapboxMap.getStyle(new Style.OnStyleLoaded() {
+//                @Override
+//                public void onStyleLoaded(@NonNull Style style) {
+//                    enableLocationComponent(style, CameraMode.TRACKING);
+//                }
+//            });
+//        } else {
+//            Toast.makeText(this.activity, "Permission not granted.", Toast.LENGTH_LONG).show();
+//            this.activity.finish();
+//        }
+//    }
 
     @Override
     public void onStart() {
