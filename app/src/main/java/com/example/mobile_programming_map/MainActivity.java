@@ -25,7 +25,7 @@ public class MainActivity extends AppCompatActivity {
     private Boolean isFirstPageLoading = true;
 
     private BottomNavigationView bottomNavigation;
-    private MyMapFragment mapFragment;
+    public MyMapFragment mapFragment;
     private BookmarkFragment bookmarkFragment;
     private SettingsFragment settingFragment;
     int NightMode;
@@ -51,6 +51,7 @@ public class MainActivity extends AppCompatActivity {
                     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
                         switch (item.getItemId()) {
                             case R.id.map_item:
+                                mapFragment.setStart_point(null);
                                 openFragment(mapFragment);
                                 return true;
                             case R.id.bookmark:
@@ -65,6 +66,7 @@ public class MainActivity extends AppCompatActivity {
                 };
         bottomNavigation.setOnNavigationItemSelectedListener(navigationItemSelectedListener);
         mapFragment = new MyMapFragment();
+        mapFragment.setStart_point(null);
         openFragment(mapFragment);
         Log.i("here", "onCreate: HEREEE");
         bookmarkFragment = new BookmarkFragment();
@@ -73,6 +75,14 @@ public class MainActivity extends AppCompatActivity {
         mydb = new DbHelper(this);
         ArrayList db_data = mydb.getAllContacts();
 
+    }
+
+    public MyMapFragment getMapFragment() {
+        return mapFragment;
+    }
+
+    public BottomNavigationView getBottomNavigation() {
+        return bottomNavigation;
     }
 
     public void openFragment(Fragment fragment) {

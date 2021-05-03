@@ -1,6 +1,7 @@
 package com.example.mobile_programming_map;
 
 import android.database.Cursor;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,6 +11,10 @@ import android.widget.Filterable;
 import androidx.annotation.NonNull;
 import androidx.appcompat.widget.AppCompatImageView;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.mapbox.mapboxsdk.camera.CameraPosition;
+import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
+import com.mapbox.mapboxsdk.geometry.LatLng;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +51,18 @@ public class MyListAdapter  extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
         ((PinViewHolder) holder).titleText.setText(pins.get(position).getMaintitle().toString());
         ((PinViewHolder) holder).subtitleText.setText(pins.get(position).getLocation().toString());
+        ((PinViewHolder) holder).setClickListener(new PinViewHolder.ItemClickListener() {
+            @Override
+            public void onItemClick(View view, int position) {
+                Log.i("BB", "onItemClick: BABA INJAM");
+                Double lat = Double.parseDouble(pins.get(position).location.split(",")[0]);
+                Double longi = Double.parseDouble(pins.get(position).location.split(",")[1]);
+                LatLng point = new LatLng(lat, longi);
+                context.getMapFragment().setStart_point(point);
+                context.getBottomNavigation().getMenu().getItem(1).setChecked(true);
+                context.openFragment(context.getMapFragment());
+            }
+        });
         AppCompatImageView trash = holder.itemView.findViewById(R.id.bin);
         trash.setOnClickListener(new View.OnClickListener() {
             @Override

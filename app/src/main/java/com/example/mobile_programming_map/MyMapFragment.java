@@ -3,8 +3,6 @@ package com.example.mobile_programming_map;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -43,6 +41,7 @@ import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.maps.Style;
+import com.mapbox.mapboxsdk.plugins.markerview.MarkerViewManager;
 
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
@@ -59,6 +58,8 @@ public class MyMapFragment extends Fragment implements PermissionsListener {
     private static final String ICON_ID = "ICON_ID";
     private Marker current_marker;
     private LocationComponent locationComponent;
+    private LatLng start_point;
+    private ArrayList<Marker> markers;
 
     @Override
     public void onAttach(Context context) {
@@ -79,30 +80,60 @@ public class MyMapFragment extends Fragment implements PermissionsListener {
         vectorDrawable.draw(canvas);
         return IconFactory.getInstance(context).fromBitmap(bitmap);
     }
+    public void addAllMarkers(){
+        Pair pair = activity.mydb.getAllPositions();
+        ArrayList longlats = (ArrayList)pair.first;
+        ArrayList names = (ArrayList)pair.second;
+        LayoutInflater inflater = requireActivity().getLayoutInflater();
+        markers = new ArrayList<>();
+        for (int i = 0; i < longlats.size(); i++){
+
+            LatLng p = new LatLng(Double.parseDouble((String)((Pair)longlats.get(i)).first), Double.parseDouble((String)((Pair)longlats.get(i)).second));
+            Drawable iconDrawables = ContextCompat.getDrawable(activity, R.drawable.ic_baseline_location_on_24);
+            Icon icons = drawableToIcon(activity, iconDrawables, Color.BLUE);
+
+            Marker m = mapboxMap.addMarker(new MarkerOptions()
+                    .position(p)
+                    .title((String)names.get(i))
+                    .icon(icons));
+            markers.add(m);
+
+        }
+    }
+    public  void  DeleteAllMarkersBut(LatLng point){
+        for(Marker m : markers){
+            if(m.getPosition().equals(point)){
+                mapboxMap.deselectMarker(m);
+            }else{
+
+                Drawable iconDrawables = ContextCompat.getDrawable(activity, R.drawable.ic_baseline_location_on_24);
+                Icon icons = drawableToIcon(activity, iconDrawables, Color.RED);
+
+                mapboxMap.addMarker(new MarkerOptions()
+                        .position(point)
+                        .title((m.getTitle()))
+                        .icon(icons));
+                mapboxMap.deselectMarker(m);
+            }
+
+        }
+    }
 
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         this.mapView = (MapView) view.findViewById(R.id.mapView);
         this.mapView.onCreate(savedInstanceState);
+
+
         this.mapView.getMapAsync(new OnMapReadyCallback() {
             @Override
             public void onMapReady(@NonNull MapboxMap mapboxMap) {
                 MyMapFragment.this.mapboxMap = mapboxMap;
 
-                Pair pair = activity.mydb.getAllPositions();
-                ArrayList longlats = (ArrayList)pair.first;
-                ArrayList names = (ArrayList)pair.second;
-                for (int i = 0; i < longlats.size(); i++){
+                addAllMarkers();
 
-                    LatLng p = new LatLng(Double.parseDouble((String)((Pair)longlats.get(i)).first), Double.parseDouble((String)((Pair)longlats.get(i)).second));
-                    Drawable iconDrawables = ContextCompat.getDrawable(activity, R.drawable.ic_baseline_location_on_24);
-                    Icon icons = drawableToIcon(activity, iconDrawables, Color.BLUE);
-                    mapboxMap.addMarker(new MarkerOptions()
-                            .position(p)
-                            .title((String)names.get(i))
-                            .icon(icons));
-                }
+
                 MyMapFragment.this.mapboxMap.addOnMapLongClickListener(new MapboxMap.OnMapLongClickListener() {
                     @Override
                     public boolean onMapLongClick(@NonNull LatLng point) {
@@ -123,6 +154,7 @@ public class MyMapFragment extends Fragment implements PermissionsListener {
                                 .setPositiveButton(R.string.save, new DialogInterface.OnClickListener() {
                                     @Override
                                     public void onClick(DialogInterface dialog, int id) {
+//                                        markerViewManager.scheduleViewMarkerInvalidation();
                                         String name = name_text.getText().toString();
                                         DecimalFormat df = new DecimalFormat("#.####");
                                         df.setRoundingMode(RoundingMode.CEILING);
@@ -135,6 +167,8 @@ public class MyMapFragment extends Fragment implements PermissionsListener {
                                             Toast.makeText(getApplicationContext(), "not done",
                                                     Toast.LENGTH_SHORT).show();
                                         }
+
+
                                     }
 
                                 })
@@ -156,24 +190,31 @@ public class MyMapFragment extends Fragment implements PermissionsListener {
                 mapboxMap.setStyle(Style.MAPBOX_STREETS, new Style.OnStyleLoaded() {
                     @Override
                     public void onStyleLoaded(@NonNull Style style) {
-                        enableLocationComponent(style);
+                        if(start_point == null){
+                            enableLocationComponent(style, CameraMode.TRACKING);
+                        }else{
+                            enableLocationComponent(style, CameraMode.NONE);
+                        }
                     }
                 });
+                if(start_point != null){
+                    Log.i("HEYYY", "onViewCreated HEYYYYYY: "+ start_point.getLatitude());
+                    moveToPoint(start_point);
+                    DeleteAllMarkersBut(start_point);
 
+                }
                 activity.findViewById(R.id.back_to_camera_tracking_mode).setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
                         Location location = locationComponent.getLastKnownLocation();
                         if (location != null) {
-                            CameraPosition position = new CameraPosition.Builder()
-                                    .target(new LatLng(location.getLatitude(), location.getLongitude()))
-                                    .zoom(16)
-                                    .tilt(20)
-                                    .build();
-                            mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(position), 2000);
+
+                            setStart_point(new LatLng(location.getLatitude(), location.getLongitude()));
+                            moveToPoint(new LatLng(location.getLatitude(), location.getLongitude()));
                         }
                     }
                 });
+
             }
         });
 
@@ -181,13 +222,13 @@ public class MyMapFragment extends Fragment implements PermissionsListener {
     }
 
     @SuppressWarnings({"MissingPermission"})
-    private void enableLocationComponent(@NonNull Style loadedMapStyle) {
+    private void enableLocationComponent(@NonNull Style loadedMapStyle, int mode) {
         if (PermissionsManager.areLocationPermissionsGranted(this.activity)) {
             locationComponent = mapboxMap.getLocationComponent();
             locationComponent.activateLocationComponent(
                     LocationComponentActivationOptions.builder(this.activity, loadedMapStyle).build());
             locationComponent.setLocationComponentEnabled(true);
-            locationComponent.setCameraMode(CameraMode.TRACKING);
+            locationComponent.setCameraMode(mode);
             locationComponent.setRenderMode(RenderMode.NORMAL);
         } else {
             permissionsManager = new PermissionsManager(this);
@@ -195,11 +236,22 @@ public class MyMapFragment extends Fragment implements PermissionsListener {
         }
     }
 
+    public void moveToPoint(LatLng point){
+        CameraPosition pos = new CameraPosition.Builder()
+                .target(point)
+                .zoom(15)
+                .tilt(18)
+                .build();
+        mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(pos), 2000);
+    }
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         permissionsManager.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
+    public void setStart_point(LatLng start_point) {
+        this.start_point = start_point;
+    }
 
     @Override
     public void onExplanationNeeded(List<String> permissionsToExplain) {
@@ -215,7 +267,7 @@ public class MyMapFragment extends Fragment implements PermissionsListener {
             mapboxMap.getStyle(new Style.OnStyleLoaded() {
                 @Override
                 public void onStyleLoaded(@NonNull Style style) {
-                    enableLocationComponent(style);
+                    enableLocationComponent(style, CameraMode.TRACKING);
                 }
             });
         } else {
@@ -228,6 +280,7 @@ public class MyMapFragment extends Fragment implements PermissionsListener {
     public void onStart() {
         super.onStart();
         mapView.onStart();
+
     }
 
     @Override
@@ -245,6 +298,7 @@ public class MyMapFragment extends Fragment implements PermissionsListener {
     @Override
     public void onDestroy() {
         super.onDestroy();
+
         mapView.onDestroy();
     }
 
