@@ -1,6 +1,8 @@
 package com.example.mobile_programming_map;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -59,8 +61,36 @@ public class SettingsFragment extends PreferenceFragmentCompat {
 
             @Override
             public boolean onPreferenceClick(Preference preference) {
-                activity.mydb.deleteAllData();
+                AlertDialog.Builder builder = new AlertDialog
+                        .Builder(getContext());
+                builder.setMessage("Do you want to delete your data?");
+                builder.setCancelable(true);
 
+
+                builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+
+                                    @Override
+                                    public void onClick(DialogInterface dialog,
+                                                        int which)
+                                    {
+                                        activity.mydb.deleteAllData();
+                                    }
+                                });
+
+                builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog,
+                                                        int which)
+                                    {
+                                        dialog.cancel();
+                                    }
+                                });
+
+                // Create the Alert dialog
+                AlertDialog alertDialog = builder.create();
+
+                // Show the Alert Dialog box
+                alertDialog.show();
                 return true;
             }
         });

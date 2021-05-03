@@ -1,10 +1,12 @@
 package com.example.mobile_programming_map;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -22,6 +24,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.fragment.app.Fragment;
@@ -118,7 +121,6 @@ public class MyMapFragment extends Fragment implements PermissionsListener {
         }
     }
     public  void  DeleteAllMarkersBut(LatLng point){
-
             for(Marker m : markers){
                 if(m.getPosition().equals(point)){
                     mapboxMap.deselectMarker(m);
@@ -149,6 +151,7 @@ public class MyMapFragment extends Fragment implements PermissionsListener {
         this.mapView.getMapAsync(new OnMapReadyCallback() {
             @Override
             public void onMapReady(@NonNull MapboxMap mapboxMap) {
+
                 MyMapFragment.this.mapboxMap = mapboxMap;
 
                 addAllMarkers();
@@ -159,7 +162,6 @@ public class MyMapFragment extends Fragment implements PermissionsListener {
                     public boolean onMapLongClick(@NonNull LatLng point) {
                         if(current_marker != null){
                             current_marker.remove();}
-
                         Drawable iconDrawable = ContextCompat.getDrawable(activity, R.drawable.ic_baseline_location_on_24);
                         Icon icon = drawableToIcon(activity, iconDrawable, Color.RED);
                         current_marker = mapboxMap.addMarker(new MarkerOptions()
@@ -178,17 +180,23 @@ public class MyMapFragment extends Fragment implements PermissionsListener {
                                         String name = name_text.getText().toString();
                                         DecimalFormat df = new DecimalFormat("#.####");
                                         df.setRoundingMode(RoundingMode.CEILING);
-                                        if(activity.mydb.insertLocation(name,
-                                                df.format(point.getLatitude()),
-                                                df.format(point.getLongitude()))){
-                                            Toast.makeText(getApplicationContext(), "done",
-                                                    Toast.LENGTH_SHORT).show();
-                                        } else{
-                                            Toast.makeText(getApplicationContext(), "not done",
+                                        if (ContextCompat.checkSelfPermission(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_DENIED){
+                                            Log.i("per", "onClick: "+ "permission accepted");
+                                            if(activity.mydb.insertLocation(name,
+                                                    df.format(point.getLatitude()),
+                                                    df.format(point.getLongitude()))){
+                                                Toast.makeText(getApplicationContext(), "done",
+                                                        Toast.LENGTH_SHORT).show();
+                                            } else{
+                                                Toast.makeText(getApplicationContext(), "not done",
+                                                        Toast.LENGTH_SHORT).show();
+                                            }
+                                        }
+                                        else{
+                                            dialog.dismiss();
+                                            Toast.makeText(getApplicationContext(), "Storage permission is not granted.\n Please grant storage permission for this app.",
                                                     Toast.LENGTH_SHORT).show();
                                         }
-
-
                                     }
 
                                 })
@@ -255,11 +263,13 @@ public class MyMapFragment extends Fragment implements PermissionsListener {
             locationComponent.setLocationComponentEnabled(true);
             locationComponent.setCameraMode(mode);
             locationComponent.setRenderMode(RenderMode.NORMAL);
+
         } else {
             permissionsManager = new PermissionsManager(this);
             permissionsManager.requestLocationPermissions(this.activity);
         }
     }
+
     private void initSearchFab() {
         activity.findViewById(R.id.fab_location_search).setOnClickListener(new View.OnClickListener() {
             @Override

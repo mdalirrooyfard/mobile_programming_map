@@ -3,21 +3,28 @@ package com.example.mobile_programming_map;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 
+import android.Manifest;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.mapbox.mapboxsdk.Mapbox;
 
 import java.util.ArrayList;
 import java.util.concurrent.ThreadPoolExecutor;
+
+import static com.mapbox.mapboxsdk.Mapbox.getApplicationContext;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -36,11 +43,17 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-//        sharedPreferences = getSharedPreferences("SharedPrefs", MODE_PRIVATE);
-//        NightMode = sharedPreferences.getInt("dark_or_light", 1);
-//        AppCompatDelegate.setDefaultNightMode(NightMode);
         super.onCreate(savedInstanceState);
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
+        }
 
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_NETWORK_STATE) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_NETWORK_STATE}, 1);
+        }
         Mapbox.getInstance(this, getString(R.string.mapbox_access_token));
         setContentView(R.layout.activity_main);
         bottomNavigation = findViewById(R.id.bottom_navigation);
@@ -74,6 +87,10 @@ public class MainActivity extends AppCompatActivity {
 
         mydb = new DbHelper(this);
         ArrayList db_data = mydb.getAllContacts();
+        if (!checkConnection()){
+            Toast.makeText(getApplicationContext(), "Network is not connected!",
+                    Toast.LENGTH_SHORT).show();
+        }
 
     }
 
