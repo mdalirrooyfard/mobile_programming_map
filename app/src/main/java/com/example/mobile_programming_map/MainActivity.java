@@ -11,6 +11,7 @@ import androidx.fragment.app.FragmentTransaction;
 import android.Manifest;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
@@ -59,6 +60,8 @@ public class MainActivity extends AppCompatActivity {
         }
         Mapbox.getInstance(this, getString(R.string.mapbox_access_token));
         setContentView(R.layout.activity_main);
+        int a = AppCompatDelegate.getDefaultNightMode();
+        Log.i("Shared Preference 2", String.valueOf(a));
         bottomNavigation = findViewById(R.id.bottom_navigation);
         bottomNavigation.getMenu().getItem(1).setChecked(true);
         BottomNavigationView.OnNavigationItemSelectedListener navigationItemSelectedListener =

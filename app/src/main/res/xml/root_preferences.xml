@@ -3,7 +3,7 @@
             app:key="dark_or_light"
             app:defaultValue="false"
             app:title="Dark Mode"
-            app:summary="Delete App Data From Phone"
+            app:summary="Change the Mode"
         />
     <Preference
             app:fragment="com.example.SyncFragment"

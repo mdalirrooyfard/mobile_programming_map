@@ -15,11 +15,14 @@ import androidx.preference.PreferenceFragment;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceManager;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import java.util.Objects;
+
+import static android.content.Context.MODE_PRIVATE;
 
 public class SettingsFragment extends PreferenceFragmentCompat {
     MainActivity activity;
@@ -47,9 +50,8 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         dark_mode.setDefaultValue(false);
         dark_mode.setOnPreferenceChangeListener((preference, newValue) -> {
             change_theme((Boolean) newValue);
-            activity.finish();
             Intent refresh = new Intent(activity, MainActivity.class);
-
+            activity.finish();
             startActivity(refresh);
             activity.overridePendingTransition(0,0);;
 
@@ -103,6 +105,15 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         else {
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
         }
+        int NightMode;
+        SharedPreferences sharedPreferences;
+        SharedPreferences.Editor editor;
+        NightMode = AppCompatDelegate.getDefaultNightMode();
+        Log.i("shared Preference 1", String.valueOf(NightMode));
+        sharedPreferences = activity.getSharedPreferences("SharedPrefs", MODE_PRIVATE);
+        editor = sharedPreferences.edit();
+        editor.putInt("dark_or_light", NightMode);
+        editor.apply();
     }
 
 }
