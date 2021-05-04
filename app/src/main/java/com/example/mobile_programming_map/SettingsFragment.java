@@ -35,9 +35,6 @@ public class SettingsFragment extends PreferenceFragmentCompat {
     public void onAttach(Context context) {
         super.onAttach(context);
         activity = (MainActivity) context;
-
-
-
     }
 
     @Override
@@ -99,20 +96,11 @@ public class SettingsFragment extends PreferenceFragmentCompat {
     }
 
     public void change_theme(boolean dark_light){
-        if (dark_light){
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
-        }
-        else {
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
-        }
-        int NightMode;
         SharedPreferences sharedPreferences;
         SharedPreferences.Editor editor;
-        NightMode = AppCompatDelegate.getDefaultNightMode();
-        Log.i("shared Preference 1", String.valueOf(NightMode));
-        sharedPreferences = activity.getSharedPreferences("SharedPrefs", MODE_PRIVATE);
+        sharedPreferences = activity.getPreferences(MODE_PRIVATE);
         editor = sharedPreferences.edit();
-        editor.putInt("dark_or_light", NightMode);
+        editor.putBoolean("dark_or_light", dark_light);
         editor.apply();
     }
 

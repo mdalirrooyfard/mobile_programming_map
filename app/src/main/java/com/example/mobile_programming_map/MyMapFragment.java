@@ -6,6 +6,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -24,6 +25,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.drawable.DrawableCompat;
@@ -58,6 +60,7 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
+import static android.content.Context.MODE_PRIVATE;
 import static com.mapbox.mapboxsdk.Mapbox.getApplicationContext;
 import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconImage;
 import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconOffset;
@@ -72,7 +75,6 @@ public class MyMapFragment extends Fragment{
     private MainActivity activity;
     public MapView mapView;
     public MapboxMap mapboxMap;
-    private PermissionsManager permissionsManager;
     private static final String ICON_ID = "ICON_ID";
     private Marker current_marker;
     private LocationComponent locationComponent;
@@ -87,8 +89,21 @@ public class MyMapFragment extends Fragment{
         activity = (MainActivity) context;
     }
 
+    public void set_mode(){
+        SharedPreferences prefs = activity.getPreferences(MODE_PRIVATE);
+        boolean dark = prefs.getBoolean("dark_or_light", false);
+        int mode = AppCompatDelegate.getDefaultNightMode();
+        if (dark && mode != AppCompatDelegate.MODE_NIGHT_YES){
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+        }
+        else if (!dark && mode != AppCompatDelegate.MODE_NIGHT_NO){
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+        }
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        set_mode();
         return inflater.inflate(R.layout.map, container, false);
     }
     public Icon drawableToIcon(@NonNull Context context, Drawable vectorDrawable, int colorRes) {
@@ -340,37 +355,10 @@ public class MyMapFragment extends Fragment{
                 .build();
         mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(pos), 2000);
     }
- //   @Override
-//    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-//        permissionsManager.onRequestPermissionsResult(requestCode, permissions, grantResults);
-//    }
 
     public void setStart_point(LatLng start_point) {
         this.start_point = start_point;
     }
-
-//    @Override
-//    public void onExplanationNeeded(List<String> permissionsToExplain) {
-//        //when the user denys the first time, we want to show an explanation why they need to accept.
-//        CharSequence message = "We need your location to show your place.";
-//        Toast toast = Toast.makeText(this.activity, message, Toast.LENGTH_LONG);
-//        toast.show();
-//    }
-//
-//    @Override
-//    public void onPermissionResult(boolean granted) {
-//        if (granted) {
-//            mapboxMap.getStyle(new Style.OnStyleLoaded() {
-//                @Override
-//                public void onStyleLoaded(@NonNull Style style) {
-//                    enableLocationComponent(style, CameraMode.TRACKING);
-//                }
-//            });
-//        } else {
-//            Toast.makeText(this.activity, "Permission not granted.", Toast.LENGTH_LONG).show();
-//            this.activity.finish();
-//        }
-//    }
 
     @Override
     public void onStart() {
