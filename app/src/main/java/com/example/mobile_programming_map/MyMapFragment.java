@@ -82,6 +82,7 @@ public class MyMapFragment extends Fragment{
     private ArrayList<Marker> markers;
     private String geojsonSourceLayerId = "geojsonSourceLayerId";
     private String symbolIconId = "symbolIconId";
+    private boolean dark_mode;
 
     @Override
     public void onAttach(Context context) {
@@ -91,12 +92,12 @@ public class MyMapFragment extends Fragment{
 
     public void set_mode(){
         SharedPreferences prefs = activity.getPreferences(MODE_PRIVATE);
-        boolean dark = prefs.getBoolean("dark_or_light", false);
+        dark_mode = prefs.getBoolean("dark_or_light", false);
         int mode = AppCompatDelegate.getDefaultNightMode();
-        if (dark && mode != AppCompatDelegate.MODE_NIGHT_YES){
+        if (dark_mode && mode != AppCompatDelegate.MODE_NIGHT_YES){
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
         }
-        else if (!dark && mode != AppCompatDelegate.MODE_NIGHT_NO){
+        else if (!dark_mode && mode != AppCompatDelegate.MODE_NIGHT_NO){
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
         }
     }
@@ -168,7 +169,8 @@ public class MyMapFragment extends Fragment{
                 MyMapFragment.this.mapboxMap = mapboxMap;
 
                 addAllMarkers();
-                mapboxMap.setStyle(Style.MAPBOX_STREETS, new Style.OnStyleLoaded() {
+                String style = dark_mode?Style.DARK:Style.LIGHT;
+                mapboxMap.setStyle(style, new Style.OnStyleLoaded() {
                     @Override
                     public void onStyleLoaded(@NonNull Style style) {
                         // Create an empty GeoJSON source using the empty feature collection

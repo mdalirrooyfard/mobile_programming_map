@@ -11,6 +11,7 @@ import androidx.fragment.app.FragmentTransaction;
 import android.Manifest;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -62,6 +63,9 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         bottomNavigation = findViewById(R.id.bottom_navigation);
         bottomNavigation.getMenu().getItem(1).setChecked(true);
+        SharedPreferences prefs = getPreferences(MODE_PRIVATE);
+        boolean dark_mode = prefs.getBoolean("dark_or_light", false);
+        change_navigation_mode(dark_mode);
         BottomNavigationView.OnNavigationItemSelectedListener navigationItemSelectedListener =
                 new BottomNavigationView.OnNavigationItemSelectedListener() {
                     @Override
@@ -145,5 +149,22 @@ public class MainActivity extends AppCompatActivity {
         editor.putInt("dark_or_light", NightMode);
         editor.apply();
 
+    }
+
+    public void change_navigation_mode(boolean dark_mode){
+        int[][] states = new int[][] {
+                new int[] { android.R.attr.state_checked}, // checked
+                new int[] {-android.R.attr.state_checked}, // unchecked
+        };
+        int background = dark_mode? R.color.black:R.color.white;
+        bottomNavigation.setBackgroundColor(getResources().getColor(background));
+        int unchecked = dark_mode? R.color.white:R.color.black;
+        int[] colors = new int[] {
+                getResources().getColor(R.color.blue),
+                getResources().getColor(unchecked),
+        };
+        ColorStateList myList = new ColorStateList(states, colors);
+        bottomNavigation.setItemTextColor(myList);
+        bottomNavigation.setItemIconTintList(myList);
     }
 }
